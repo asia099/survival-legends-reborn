@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Survival Legends: Reborn</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%239b4dff'/%3E%3Cpath d='M16 6 L24 24 L16 19 L8 24 Z' fill='%23ffcf3f'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/style.css">
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="game"></div>
+
+  <!-- ===================== HUD ===================== -->
+  <div id="hud" class="hidden">
+    <div id="crosshair"><i></i><i></i><i></i><i></i></div>
+    <div id="hitmarker"></div>
+    <div id="scope" class="hidden"></div>
+    <div id="vignette"></div>
+    <div id="stormtint"></div>
+    <div id="dmgdirs"></div>
+    <div id="floaters"></div>
+
+    <div id="topbar">
+      <div id="compass"><div id="compass-strip"></div><div id="compass-mark"></div></div>
+      <div id="banner"></div>
+    </div>
+
+    <div id="killfeed"></div>
+
+    <div id="topright">
+      <canvas id="minimap" width="200" height="200"></canvas>
+      <div id="counters">
+        <span title="Players alive"><b id="alive-count">0</b> ALIVE</span>
+        <span title="Your eliminations"><b id="kill-count">0</b> ELIMS</span>
+      </div>
+      <div id="storm-info"></div>
+      <div id="net-info"></div>
+    </div>
+
+    <div id="teammates"></div>
+
+    <div id="prompt" class="hidden"></div>
+    <div id="progress" class="hidden"><div id="progress-label"></div><div id="progress-bar"><i></i></div></div>
+    <div id="notice"></div>
+
+    <div id="bottomleft">
+      <div id="chat">
+        <div id="chat-log"></div>
+        <input id="chat-input" maxlength="120" placeholder="Say something… (Enter to send, Esc to cancel)" class="hidden" autocomplete="off">
+      </div>
+      <div id="vitals">
+        <div class="bar shield"><i id="shield-fill"></i><span id="shield-text">0</span></div>
+        <div class="bar health"><i id="health-fill"></i><span id="health-text">100</span></div>
+      </div>
+    </div>
+
+    <div id="hotbar"></div>
+    <div id="ammo"><div id="ammo-mag">–</div><div id="ammo-reserve"></div><div id="weapon-name"></div></div>
+    <div id="fps" class="hidden"></div>
+  </div>
+
+  <!-- ===================== Screens ===================== -->
+  <div id="menu" class="screen">
+    <div class="menu-card">
+      <div class="logo">SURVIVAL LEGENDS<span>REBORN</span></div>
+      <p class="tagline">Drop in. Gear up. Outlast the storm.</p>
+      <label class="field">Legend name
+        <input id="name-input" maxlength="16" placeholder="Your name" autocomplete="off">
+      </label>
+      <button id="play-btn" class="primary">PLAY</button>
+      <div id="menu-status"></div>
+      <div id="profile"></div>
+      <div class="menu-row">
+        <button id="menu-settings-btn">Settings</button>
+        <button id="menu-controls-btn">Controls</button>
+      </div>
+      <div class="build-note">Phase 1 prototype · battle royale mode</div>
+    </div>
+  </div>
+
+  <div id="lobby" class="panel hidden">
+    <h2>LOBBY <small id="lobby-phase"></small></h2>
+    <div id="lobby-roster"></div>
+    <div id="lobby-host" class="hidden">
+      <label>Bots <input id="bots-range" type="range" min="0" max="15" value="7"> <b id="bots-value">7</b></label>
+      <label>Mode
+        <select id="team-select">
+          <option value="1">Solo</option>
+          <option value="2">Duos</option>
+          <option value="4">Squads</option>
+        </select>
+      </label>
+      <button id="start-btn" class="primary">START MATCH</button>
+    </div>
+    <div id="lobby-guest" class="hidden">Waiting for the party leader to start, or for everyone to ready up.</div>
+    <div class="lobby-actions">
+      <button id="ready-btn">READY</button>
+      <button id="lobby-play-btn">Back to game</button>
+    </div>
+    <p class="hint">Walk around the warm-up field while you wait. Press <b>Esc</b> to use this panel.</p>
+  </div>
+
+  <div id="death" class="screen-overlay hidden">
+    <div class="death-card">
+      <div class="death-title">ELIMINATED</div>
+      <div id="death-detail"></div>
+      <div id="death-place"></div>
+      <div class="hint">Spectating · Click to switch player</div>
+    </div>
+  </div>
+
+  <div id="results" class="screen hidden">
+    <div class="results-card">
+      <div id="results-title"></div>
+      <div id="results-sub"></div>
+      <div id="results-stats"></div>
+      <table id="results-table"></table>
+      <div id="results-next"></div>
+    </div>
+  </div>
+
+  <div id="pause" class="screen hidden">
+    <div class="menu-card">
+      <h2>PAUSED</h2>
+      <button id="resume-btn" class="primary">Resume</button>
+      <button id="pause-settings-btn">Settings</button>
+      <button id="pause-controls-btn">Controls</button>
+      <button id="leave-btn">Leave server</button>
+    </div>
+  </div>
+
+  <div id="settings" class="screen hidden">
+    <div class="menu-card wide">
+      <h2>SETTINGS</h2>
+      <div id="settings-form"></div>
+      <button id="settings-close" class="primary">Done</button>
+    </div>
+  </div>
+
+  <div id="controls" class="screen hidden">
+    <div class="menu-card wide">
+      <h2>CONTROLS</h2>
+      <table class="controls">
+        <tr><td>W A S D</td><td>Move</td></tr>
+        <tr><td>Mouse</td><td>Look / aim</td></tr>
+        <tr><td>Left click</td><td>Fire · use selected healing item</td></tr>
+        <tr><td>Right click (hold)</td><td>Aim down sights</td></tr>
+        <tr><td>Shift</td><td>Sprint</td></tr>
+        <tr><td>Space</td><td>Jump · jump out of the transport ship</td></tr>
+        <tr><td>C / Ctrl</td><td>Crouch · dive while gliding</td></tr>
+        <tr><td>R</td><td>Reload</td></tr>
+        <tr><td>E</td><td>Pick up</td></tr>
+        <tr><td>G</td><td>Drop selected item</td></tr>
+        <tr><td>1 – 5 / mouse wheel</td><td>Select slot</td></tr>
+        <tr><td>M</td><td>Full map</td></tr>
+        <tr><td>Tab (hold)</td><td>Scoreboard</td></tr>
+        <tr><td>Enter</td><td>Chat</td></tr>
+        <tr><td>Esc</td><td>Menu / lobby panel</td></tr>
+      </table>
+      <button id="controls-close" class="primary">Done</button>
+    </div>
+  </div>
+
+  <div id="bigmap" class="screen hidden"><canvas id="bigmap-canvas" width="720" height="720"></canvas></div>
+  <div id="scoreboard" class="screen hidden"><div class="results-card"><h2>PLAYERS</h2><table id="scoreboard-table"></table></div></div>
+
+  <div id="error" class="hidden"></div>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
